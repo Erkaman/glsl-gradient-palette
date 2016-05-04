@@ -11,13 +11,14 @@ uniform float uSeed;
 uniform float uTime;
 uniform sampler2D uPalette;
 
+
 #pragma glslify: snoise3 = require(glsl-noise/simplex/3d)
 #pragma glslify: snoise4 = require(glsl-noise/simplex/4d)
 
 #pragma glslify: cosPalette = require(../index.glsl)
 
 float noise(vec3 s) {
-    return snoise4( vec4(s, /*uTime*0.01*/ 0.0) ) * 0.5 + 0.5; // scale to range [0,1]
+    return snoise4( vec4(s, uTime*0.01  ) ) * 0.5 + 0.5; // scale to range [0,1]
 }
 
 float fbm( vec3 p) {

@@ -22,11 +22,27 @@ var mouseLeftDownPrev = false;
 
 var bg = [0.6, 0.7, 1.0]; // clear color.
 
-var noiseScale = {val: 2.0};
+var noiseScale = {val: 4.0};
+var noiseAnimateSpeed = {val: 0.01};
+var paletteType = {val: 0};
+
+// var noiseScale = {val: 2.0};
+
+var noiseAnimate = {val: false};
+
+
 var seed = 100;
 
 var paletteTexture;
 var totalTime = 0;
+
+var earthPaletteTexture;
+var cloudPaletteTexture;
+var redPaletteTexture;
+var somethingPaletteTexture;
+var fireballPaletteTexture;
+var rockPaletteTexture;
+
 
 // arguments are top-left and bottom-right corners
 function createQuad(tl, br) {
@@ -89,7 +105,7 @@ shell.on("gl-init", function () {
         [1.0, [0.1, 0.30, 0.1]],
     ];
 
-    var clouds =  [
+    var cloud =  [
         [0.0, [0,0,0.7]],
         [0.2, [0,0,1.0]],
         [0.85, [1.0, 1.0, 1.0]],
@@ -97,7 +113,7 @@ shell.on("gl-init", function () {
     ];
 
 
-    var gas =  [
+    var red =  [
         [0.0, [1.0,0,0.0]],
         [0.15, [0.5,0,0.1]],
         [0.3, [0.6,0,0.3]],
@@ -107,8 +123,50 @@ shell.on("gl-init", function () {
         [1.0, [1.0, 1.0, 0.0]],
     ];
 
-    paletteTexture = createGradientPalette(gl,gas
-       );
+
+    var something =  [
+        [0.0, [0.0,0.3,0.3]],
+        [0.1, [1.0,0.0,1.0]],
+        [0.2, [0.0,0.0,0.4]],
+        [0.3, [0.3,0.6,0.2]],
+        [0.4, [0.4,0.4,0.0]],
+        [0.5, [0.9,0.7,0.7]],
+        [0.6, [0.5,0.0,0.0]],
+        [0.7, [0.8,0.3,0.5]],
+        [0.8, [0.8,0.8,0.8]],
+        [0.9, [0.0,1.0,0.0]],
+        [1.0, [0.0, 0.0, 0.0]],
+    ];
+
+    var fireball =  [
+        [0.0, [0.4,0.4,0.4]],
+
+
+        [0.55, [0.0,0.0,0.0]],
+
+        [0.60, [1.0,0.0, 0.0]],
+
+        [0.70, [1.0,1.0, 0.0]],
+
+        [1.0, [0.4,0.4, 0.0]]
+    ];
+
+    var rock =  [
+        [0.0, [0.2,0.1,0.0]],
+        [0.05, [0.1,0.0,0.0]],
+        [0.45, [0.25,0.15,0.05]],
+        [0.5, [0.30,0.20,0.05]],
+        [0.60, [0.45,0.35,0.20]],
+        [0.75, [0.40,0.30,0.20]],
+        [1.0, [0.5,0.4,0.3]] ];
+
+    earthPaletteTexture = createGradientPalette(gl,earth);
+    cloudPaletteTexture = createGradientPalette(gl,cloud);
+    redPaletteTexture = createGradientPalette(gl,red);
+    somethingPaletteTexture = createGradientPalette(gl,something);
+    fireballPaletteTexture = createGradientPalette(gl,fireball);
+    rockPaletteTexture = createGradientPalette(gl,rock);
+
 });
 
 function newSeed() {
@@ -118,7 +176,27 @@ function newSeed() {
 shell.on("gl-render", function (t) {
     var gl = shell.gl
     var canvas = shell.canvas;
-    totalTime += t;
+
+    if(noiseAnimate.val)
+        totalTime += t;
+
+//     = createGradientPalette(gl,rock);
+
+    console.log("type", paletteType.val );
+    if(paletteType.val == 0) {
+        paletteTexture =  earthPaletteTexture;
+    } else if(paletteType.val == 1) {
+        paletteTexture =  cloudPaletteTexture;
+    } else if(paletteType.val == 2) {
+        paletteTexture =  redPaletteTexture;
+    } else if(paletteType.val == 3) {
+        paletteTexture =  somethingPaletteTexture;
+    }else if(paletteType.val == 4) {
+        paletteTexture =  fireballPaletteTexture;
+    }else if(paletteType.val == 5) {
+        paletteTexture =  rockPaletteTexture;
+    }
+
 
 
     gl.clearColor(bg[0], bg[1], bg[2], 1);
@@ -143,7 +221,10 @@ shell.on("gl-render", function (t) {
     sphereShader.uniforms.uSeed = seed;
     sphereShader.uniforms.uPalette = paletteTexture.bind()
     sphereShader.uniforms.uTime = totalTime;
-    console.log("time: ",totalTime);
+    sphereShader.uniforms.uNoiseAnimateSpeed = noiseAnimateSpeed.val;
+
+
+    //console.log("time: ",totalTime);
 
     sphereGeo.bind(sphereShader);
     sphereGeo.draw();
@@ -181,12 +262,34 @@ shell.on("gl-render", function (t) {
 
     gui.textLine("Noise Settings");
 
+    gui.checkbox("Animate", noiseAnimate );
 
-    gui.sliderFloat("Scale", noiseScale, 0.1, 10.0);
+    //gui.sliderFloat("Scale", noiseScale, 0.1, 10.0);
+    gui.sliderFloat("Animation speed", noiseAnimateSpeed, 0.001, 0.1);
+
+    gui.sliderFloat("scale", noiseScale, 0.0, 10.0);
+
 
     if(gui.button("New Seed")) {
         newSeed();
     }
+
+    gui.radioButton("Earth", paletteType, 0);
+    gui.radioButton("Cloud", paletteType, 1);
+    gui.radioButton("Red", paletteType, 2);
+    gui.radioButton("Something", paletteType, 3);
+    gui.radioButton("Fireball", paletteType, 4);
+    gui.radioButton("Rock", paletteType, 5);
+
+    /*
+     var earthPaletteTexture;
+     var cloudPaletteTexture;
+     var redPaletteTexture;
+     var somethingPaletteTexture;
+     var fireballPaletteTexture;
+     var rockPaletteTexture;
+     */
+
 
     gui.end(gl, canvas.width, canvas.height);
 });
