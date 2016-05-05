@@ -84,6 +84,7 @@ shell.on("gl-init", function () {
     ];
 
 
+    
     var red =  [
         [0.0, [1.0,0,0.0]],
         [0.15, [0.5,0,0.1]],
@@ -111,14 +112,9 @@ shell.on("gl-init", function () {
 
     var fireball =  [
         [0.0, [0.4,0.4,0.4]],
-
-
         [0.55, [0.0,0.0,0.0]],
-
         [0.60, [1.0,0.0, 0.0]],
-
         [0.70, [1.0,1.0, 0.0]],
-
         [1.0, [0.4,0.4, 0.0]]
     ];
 
@@ -131,6 +127,14 @@ shell.on("gl-init", function () {
         [0.75, [0.40,0.30,0.20]],
         [1.0, [0.5,0.4,0.3]] ];
 
+
+    var simple =  [
+        [0.0, [1.0,0.0,0.0]],
+        [0.5, [0.0,0.0,0.0]],
+
+        [1.0, [0.0,0.0,1.0]],
+    ];
+
     var opts =  {size:1024};
 
     earthPaletteTexture = createGradientPalette(gl,earth, opts);
@@ -139,6 +143,7 @@ shell.on("gl-init", function () {
     somethingPaletteTexture = createGradientPalette(gl,something, opts);
     fireballPaletteTexture = createGradientPalette(gl,fireball, opts);
     rockPaletteTexture = createGradientPalette(gl,rock, opts);
+    simplePaletteTexture = createGradientPalette(gl,simple, opts);
 
 });
 
@@ -162,6 +167,8 @@ shell.on("gl-render", function (t) {
         paletteTexture =  fireballPaletteTexture;
     }else if(paletteType.val == 5) {
         paletteTexture =  rockPaletteTexture;
+    }else if(paletteType.val == 6) {
+        paletteTexture =  simplePaletteTexture;
     }
 
     gl.clearColor(bg[0], bg[1], bg[2], 1);
@@ -220,6 +227,7 @@ shell.on("gl-render", function (t) {
     gui.radioButton("Something", paletteType, 3);
     gui.radioButton("Fireball", paletteType, 4);
     gui.radioButton("Rock", paletteType, 5);
+    gui.radioButton("Simple", paletteType, 6);
 
     gui.separator();
 

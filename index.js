@@ -106,6 +106,7 @@ PaletteDrawer
  */
 
 function PaletteDrawer(gl, position, size) {
+    this.gl = gl;
     var quad = _createQuad(  position, size);
     this.quadGeo = Geometry(gl).
     attr('aPosition', quad.positions, {size:2} ).
@@ -115,6 +116,7 @@ function PaletteDrawer(gl, position, size) {
 }
 
 PaletteDrawer.prototype.draw = function (paletteTexture, canvasWidth, canvasHeight) {
+
     this.quadShader.bind();
 
     var projection = mat4.create()
@@ -124,6 +126,7 @@ PaletteDrawer.prototype.draw = function (paletteTexture, canvasWidth, canvasHeig
     this.quadShader.uniforms.palette = paletteTexture.bind()
 
     this.quadGeo.draw();
+
 };
 
 module.exports.createGradientPalette=createGradientPalette;

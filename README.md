@@ -1,55 +1,97 @@
-# cos-palette
+# glsl-gradient-palette
 
-`cosPalette` is a simple shader function that is defined as
+This module can be used to create gradient color palettes. These can be used to colorize noise functions and procedurally
+generate textures in shaders. Below is an example of such a procedural texture.
 
-```glsl
-vec3 cosPalette(  float t,  vec3 a,  vec3 b,  vec3 c, vec3 d ){
-    return a + b*cos( 6.28318*(c*t+d) );
-}
+<img src="images/lava.png" width="356" height="366" />
+
+More examples can be found in the provided [demo]()
+
+## Usage
+
+To create a gradient palette, you basically give the API a sequential list of colors. The API will then create a
+palette, by linearly interpolating between these colors. It is very easy to create a palette:
+
+```javascript
+    var simple =  [
+        [0.0, [1.0,0.0,0.0]],
+        [0.5, [0.0,0.0,0.0]],
+        [1.0, [0.0,0.0,1.0]],
+    ];
+
+    var opts =  {size:1024};
+
+    simplePaletteTexture = createGradientPalette(gl,simple);
 ```
 
-where `a,b,c,d` are RGB-colors. This function can be used to make very compact color palettes.
-A simple editor for making such palettes is provided [here](http://erkaman.github.io/glsl-cos-palette/).
+above, we create a palette where we first interpolate from red to black, and then from black to red. To be more specific,
+From `0.0` to `0.5` we interpolate between the RGB colors `[1.0,0.0,0.0]` and `[0.0,0.0,0.0]`, and from
+`0.5` to `1.0` we interpolate from  `[0.0,0.0,0.0]` to `[0.0,0.0,1.0]`. The palette we just have created will
+look like this:
 
+<img src="images/simple.png" width="356" height="366" />
 
-The function `cosPalette(t, a, b,  c, d )`, which is the palette, will basically assign a color to every value `t`, which is in the range `[0,1]`. So if you set `t` to be the value of some noise function(say, Perlin noise) in range `[0,1]`, you can use this
-palette to make simple procedural textures. The palette will basically colorize the noise. In the fragment shader, we can easily procedurally generate a texture by doing something like
+in the upper parts of the image, we can see the palette, and below, we see what happens if we use the palette to
+colorize a noise function.
 
-```glsl
-    float t = noise(vPosition);
-    vec3 tex = cosPalette(t, uAColor, uBColor, uCColor, uDColor );
+It is easy to use the created palette in a shader. `createGradientPalette` will return the created palette as a
+texture(as a `gl-texture2d`), and this texture can be sent to a shader by doing
+
+```javascript
+   sphereShader.uniforms.uPalette = simplePaletteTexture.bind()
 ```
 
-Credit goes to [Inigo Quilez](http://www.iquilezles.org/www/articles/palettes/palettes.htm) for coming up with this technique.
+now we can use it to colorize a noise function by sampling from it, based on the noise value:
 
-## Examples
+```glsl
+   float t = noise(vPosition);
+   vec3 tex =   texture2D(uPalette, vec2(t, 0.0) ).xyz;
+```
 
-Below are some examples of palettes
+and that results in the textured sphere seen above.
 
-`cosPalette(t,vec3(0.2,0.7,0.4),vec3(0.6,0.9,0.2),vec3(0.6,0.8,0.7),vec3(0.5,0.1,0.0))`
+By specifying more colors, we can create more advanced textures. For instance, the palette
+
+```javascript
+
+    var fireball =  [
+        [0.0, [0.4,0.4,0.4]],
+        [0.55, [0.0,0.0,0.0]],
+        [0.60, [1.0,0.0, 0.0]],
+        [0.70, [1.0,1.0, 0.0]],
+        [1.0, [0.4,0.4, 0.0]]
+    ];
+```
+
+results in
+
+<img src="images/lava.png" width="356" height="366" />
+
+## API
+
+### `function createGradientPalette(gl, gradientList[, opts])`
+
+Creates a gradient palette, and returns the created palette stored as a `gl-texture2d`, with a default size of
+`1024x1`.
+
+* `gl` your WebGL context.
+* `gradientList` the list of colors to use when creating the palette. See the previous section for more details.
+* `opts` optional arguments objects. Can currently only contains the property `opts.size`, which specifies the width
+of the created palette texture. Defaults to `1024`.
+
+### `paletteDrawer = new PaletteDrawer(gl, position, size )`
+
+Creates a palette drawer, that can be used for drawing a palette texture on the screen. Useful for visualising a palette.
+
+* `gl` your WebGL context.
+* `position` the pixel position where your palette drawer will be drawn. Stored as an array `[x,y]`.
+* `size` the pixel size of your palette drawer. Stored as an array`[x_size,y_size]`.
 
 
-<img src="images/f.png" width="356" height="366" />
+### `paletteDrawer.draw(paletteTexture, canvasWidth, canvasHeight)`
 
+Draws a palette texture as a simple quad.
 
-`cosPalette(t,vec3(0.2,0.5,0.3),vec3(0.0,0.5,0.7),vec3(1.0,1.0,1.0),vec3(0.0,0.3,0.7))`
-
-<img src="images/g.png" width="356" height="366" />
-
-
-`cosPalette(t,vec3(0.6,0.0,0.0),vec3(1.0,0.0,0.0),vec3(1.0,0.0,0.0),vec3(1.0,0.0,0.0))`
-
-<img src="images/h.png" width="356" height="366" />
-
-
-`cosPalette(t,vec3(1.0,0.4,0.0),vec3(0.4,0.8,0.0),vec3(0.5,0.3,0.9),vec3(0.9,0.6,0.9))`
-
-<img src="images/j.png" width="356" height="366" />
-
-
-`cosPalette(t,vec3(0.4,0.3,0.1),vec3(0.1,0.1,0.1),vec3(0.4,0.4,0.4),vec3(0.0,0.0,0.0))`
-
-<img src="images/l.png" width="356" height="366" />
-
-
-
+* `paletteTexture` the palette texture to draw.
+* `canvasWidth` the width of the canvas.
+* `canvasHeight` the height of the canvas.

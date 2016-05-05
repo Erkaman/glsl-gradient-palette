@@ -1,7 +1,7 @@
 {
   "name": "glsl-gradient-palette",
   "version": "1.0.0",
-  "description": "glsl function for making cosine palettes",
+  "description": "Module for creating gradient palettes for usage in glsl.",
   "scripts": {
     "start": "budo --verbose example/index.js -t glslify --live --open",
     "test": "standard"
