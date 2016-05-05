@@ -78,10 +78,10 @@ Creates a gradient palette, and returns the created palette stored as a `gl-text
 
 * `gl` your WebGL context.
 * `gradientList` the list of colors to use when creating the palette. See the previous section for more details.
-* `opts` optional arguments objects. Can currently only contains the property `opts.size`, which specifies the width
+* `opts` optional arguments objects. Can currently only contain the property `opts.size`, which specifies the width
 of the created palette texture. Defaults to `1024`.
 
-### `paletteDrawer = new PaletteDrawer(gl, position, size )`
+### `paletteDrawer = new PaletteDrawer(gl, position, size)`
 
 Creates a palette drawer, that can be used for drawing a palette texture on the screen. Useful for visualising a palette.
 
