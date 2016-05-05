@@ -3,7 +3,34 @@
  */
 
 
-var createTexture = require('gl-texture2d')
+var createTexture = require('gl-texture2d');
+var Geometry = require('gl-geometry');
+var glslify = require('glslify');
+var glShader = require('gl-shader');
+var mat4 = require('gl-mat4');
+
+// arguments are top-left and bottom-right corners
+function _createQuad(tl, br) {
+    var positions = [];
+    var uvs = [];
+
+    positions.push( [tl[0], tl[1] ] );
+    positions.push( [ br[0],  tl[1] ] );
+    positions.push( [ tl[0] ,  br[1] ] );
+    positions.push([ br[0], br[1] ] );
+
+    uvs.push( [0,0 ] );// top-left
+    uvs.push( [1,0 ] );// bottom-left
+    uvs.push( [0,1 ] );// top-right
+    uvs.push( [1,1 ] );// bottom-right
+
+    var cells = [];
+    cells.push( [2,1,0] );
+
+    cells.push( [1,2,3] );
+
+    return {positions: positions, cells:cells, uvs:uvs};
+}
 
 function _lerpColors(c1, c2, t) {
     return [
@@ -68,4 +95,27 @@ function createGradientPalette(gl, gradientList) {
 
 }
 
-module.exports=createGradientPalette;
+
+function PaletteDrawer(gl) {
+    var quad = _createQuad(  [400, 40], [880, 100] );
+    this.quadGeo = Geometry(gl).
+    attr('aPosition', quad.positions, {size:2} ).
+    attr('aUv', quad.uvs, {size:2} ).faces(quad.cells, {size:3});
+
+    this.quadShader = glShader(gl, glslify("./quad_vert.glsl"), glslify("./quad_frag.glsl"));
+}
+
+PaletteDrawer.prototype.draw = function (paletteTexture, canvasWidth, canvasHeight) {
+    this.quadShader.bind();
+
+    var projection = mat4.create()
+    mat4.ortho(projection, 0,  canvasWidth, canvasHeight, 0, -1.0, 1.0)
+    this.quadGeo.bind(this.quadShader);
+    this.quadShader.uniforms.uProj = projection;
+    this.quadShader.uniforms.palette = paletteTexture.bind()
+
+    this.quadGeo.draw();
+};
+
+module.exports.createGradientPalette=createGradientPalette;
+module.exports.PaletteDrawer=PaletteDrawer;

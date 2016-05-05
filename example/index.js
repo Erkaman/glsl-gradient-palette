@@ -4,7 +4,7 @@ var mat4 = require('gl-mat4');
 var vec3 = require('gl-vec3');
 var Geometry = require('gl-geometry');
 var glShader = require('gl-shader');
-var glslify = require('glslify')
+var glslify = require('glslify');
 var createOrbitCamera = require('orbit-camera');
 var shell = require("gl-now")();
 var createGui = require("pnp-gui");
@@ -12,9 +12,11 @@ var cameraPosFromViewMatrix = require('gl-camera-pos-from-view-matrix');
 var randomArray = require('random-array');
 var createSphere = require('primitive-icosphere');
 var copyToClipboard = require('copy-to-clipboard');
-var createGradientPalette = require('../index.js');
+var createGradientPalette = require('../index.js').createGradientPalette;
+var PaletteDrawer = require('../index.js').PaletteDrawer;
 
-var sphereShader, quadShader, quadGeo, sphereGeo;
+var sphereShader, sphereGeo, paletteDrawer;
+
 
 var camera = createOrbitCamera([0, -2.0, 0], [0, 0, 0], [0, 1, 0]);
 
@@ -44,28 +46,7 @@ var fireballPaletteTexture;
 var rockPaletteTexture;
 
 
-// arguments are top-left and bottom-right corners
-function createQuad(tl, br) {
-    var positions = [];
-    var uvs = [];
 
-    positions.push( [tl[0], tl[1] ] );
-    positions.push( [ br[0],  tl[1] ] );
-    positions.push( [ tl[0] ,  br[1] ] );
-    positions.push([ br[0], br[1] ] );
-
-    uvs.push( [0,0 ] );// top-left
-    uvs.push( [1,0 ] );// bottom-left
-    uvs.push( [0,1 ] );// top-right
-    uvs.push( [1,1 ] );// bottom-right
-
-    var cells = [];
-    cells.push( [2,1,0] );
-
-    cells.push( [1,2,3] );
-
-    return {positions: positions, cells:cells, uvs:uvs};
-}
 
 shell.on("gl-init", function () {
     var gl = shell.gl
@@ -78,17 +59,14 @@ shell.on("gl-init", function () {
     gui.windowSizes = [200, 380];
     gui.windowPosition = [0, 0];
 
+   paletteDrawer = new PaletteDrawer(gl);
+
     var sphere = createSphere(1, { subdivisions: 2});
     sphereGeo = Geometry(gl)
         .attr('aPosition', sphere.positions).faces(sphere.cells);
 
-    var quad = createQuad(  [400, 40], [880, 100] );
-    quadGeo = Geometry(gl).
-    attr('aPosition', quad.positions, {size:2} ).
-    attr('aUv', quad.uvs, {size:2} ).faces(quad.cells, {size:3});
 
     sphereShader = glShader(gl, glslify("./sphere_vert.glsl"), glslify("./sphere_frag.glsl"));
-    quadShader = glShader(gl, glslify("./quad_vert.glsl"), glslify("./quad_frag.glsl"));
 
 
     // fix intial camera view.
@@ -182,7 +160,6 @@ shell.on("gl-render", function (t) {
 
 //     = createGradientPalette(gl,rock);
 
-    console.log("type", paletteType.val );
     if(paletteType.val == 0) {
         paletteTexture =  earthPaletteTexture;
     } else if(paletteType.val == 1) {
@@ -224,8 +201,6 @@ shell.on("gl-render", function (t) {
     sphereShader.uniforms.uNoiseAnimateSpeed = noiseAnimateSpeed.val;
 
 
-    //console.log("time: ",totalTime);
-
     sphereGeo.bind(sphereShader);
     sphereGeo.draw();
 
@@ -233,16 +208,7 @@ shell.on("gl-render", function (t) {
     Render Palette.
      */
 
-    quadShader.bind();
-
-    var projection = mat4.create()
-    mat4.ortho(projection, 0,  canvas.width, canvas.height, 0, -1.0, 1.0)
-    quadGeo.bind(quadShader);
-    quadShader.uniforms.uProj = projection;
-    quadShader.uniforms.palette = paletteTexture.bind()
-
-    quadGeo.draw();
-
+    paletteDrawer.draw(paletteTexture, canvas.width, canvas.height);
 
     /*
     Render GUI.
@@ -280,16 +246,7 @@ shell.on("gl-render", function (t) {
     gui.radioButton("Something", paletteType, 3);
     gui.radioButton("Fireball", paletteType, 4);
     gui.radioButton("Rock", paletteType, 5);
-
-    /*
-     var earthPaletteTexture;
-     var cloudPaletteTexture;
-     var redPaletteTexture;
-     var somethingPaletteTexture;
-     var fireballPaletteTexture;
-     var rockPaletteTexture;
-     */
-
+    
 
     gui.end(gl, canvas.width, canvas.height);
 });
