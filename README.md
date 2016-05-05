@@ -1,5 +1,7 @@
 # glsl-gradient-palette
 
+[![NPM](https://nodei.co/npm/glsl-gradient-palette.png)](https://www.npmjs.com/package/glsl-gradient-palette)
+
 This module can be used to create gradient color palettes. These can be used to colorize noise functions and procedurally
 generate textures in shaders. Below is an example of such a procedural texture.
 
