@@ -21,8 +21,6 @@ palette, by linearly interpolating between these colors. It is very easy to crea
         [1.0, [0.0,0.0,1.0]],
     ];
 
-    var opts =  {size:1024};
-
     simplePaletteTexture = createGradientPalette(gl,simple);
 ```
 
