@@ -5,7 +5,7 @@ generate textures in shaders. Below is an example of such a procedural texture.
 
 <img src="images/lava.png" width="356" height="366" />
 
-More examples can be found in the provided [demo]()
+More examples can be found in the provided [demo](http://erkaman.github.io/glsl-gradient-palette/)
 
 ## Usage
 
