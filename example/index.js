@@ -17,7 +17,6 @@ var PaletteDrawer = require('../index.js').PaletteDrawer;
 
 var sphereShader, sphereGeo, paletteDrawer;
 
-
 var camera = createOrbitCamera([0, -2.0, 0], [0, 0, 0], [0, 1, 0]);
 
 var mouseLeftDownPrev = false;
@@ -25,15 +24,10 @@ var mouseLeftDownPrev = false;
 var bg = [0.6, 0.7, 1.0]; // clear color.
 
 var noiseScale = {val: 4.0};
-var noiseAnimateSpeed = {val: 0.01};
-var paletteType = {val: 0};
+var noiseAnimateSpeed = {val: 0.3};
+var paletteType = {val: 4};
 
-// var noiseScale = {val: 2.0};
-
-var noiseAnimate = {val: false};
-
-
-var seed = 100;
+var noiseAnimate = {val: true};
 
 var paletteTexture;
 var totalTime = 0;
@@ -45,9 +39,6 @@ var somethingPaletteTexture;
 var fireballPaletteTexture;
 var rockPaletteTexture;
 
-
-
-
 shell.on("gl-init", function () {
     var gl = shell.gl
 
@@ -56,21 +47,23 @@ shell.on("gl-init", function () {
     gl.cullFace(gl.BACK)
     
     gui = new createGui(gl);
-    gui.windowSizes = [200, 380];
-    gui.windowPosition = [0, 0];
+    gui.windowSizes = [280, 380];
 
-   paletteDrawer = new PaletteDrawer(gl);
+   paletteDrawer = new PaletteDrawer(gl, [400, 40], [880, 100] );
 
     var sphere = createSphere(1, { subdivisions: 2});
     sphereGeo = Geometry(gl)
         .attr('aPosition', sphere.positions).faces(sphere.cells);
-
 
     sphereShader = glShader(gl, glslify("./sphere_vert.glsl"), glslify("./sphere_frag.glsl"));
 
 
     // fix intial camera view.
     camera.rotate([0,0], [0,0] );
+
+    /*
+    Initialize all the palettes.
+     */
 
     var earth =  [
         [0.0, [0,0,1]],
@@ -138,27 +131,24 @@ shell.on("gl-init", function () {
         [0.75, [0.40,0.30,0.20]],
         [1.0, [0.5,0.4,0.3]] ];
 
-    earthPaletteTexture = createGradientPalette(gl,earth);
-    cloudPaletteTexture = createGradientPalette(gl,cloud);
-    redPaletteTexture = createGradientPalette(gl,red);
-    somethingPaletteTexture = createGradientPalette(gl,something);
-    fireballPaletteTexture = createGradientPalette(gl,fireball);
-    rockPaletteTexture = createGradientPalette(gl,rock);
+    var opts =  {size:1024};
+
+    earthPaletteTexture = createGradientPalette(gl,earth, opts);
+    cloudPaletteTexture = createGradientPalette(gl,cloud, opts);
+    redPaletteTexture = createGradientPalette(gl,red, opts);
+    somethingPaletteTexture = createGradientPalette(gl,something, opts);
+    fireballPaletteTexture = createGradientPalette(gl,fireball, opts);
+    rockPaletteTexture = createGradientPalette(gl,rock, opts);
 
 });
 
-function newSeed() {
-    seed = randomArray(0.0, 100.0).oned(1)[0];
-}
 
 shell.on("gl-render", function (t) {
     var gl = shell.gl
     var canvas = shell.canvas;
 
     if(noiseAnimate.val)
-        totalTime += t;
-
-//     = createGradientPalette(gl,rock);
+        totalTime += noiseAnimateSpeed.val;
 
     if(paletteType.val == 0) {
         paletteTexture =  earthPaletteTexture;
@@ -173,8 +163,6 @@ shell.on("gl-render", function (t) {
     }else if(paletteType.val == 5) {
         paletteTexture =  rockPaletteTexture;
     }
-
-
 
     gl.clearColor(bg[0], bg[1], bg[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -195,10 +183,8 @@ shell.on("gl-render", function (t) {
     sphereShader.uniforms.uView = view;
     sphereShader.uniforms.uProjection = projection;
     sphereShader.uniforms.uNoiseScale = noiseScale.val;
-    sphereShader.uniforms.uSeed = seed;
     sphereShader.uniforms.uPalette = paletteTexture.bind()
     sphereShader.uniforms.uTime = totalTime;
-    sphereShader.uniforms.uNoiseAnimateSpeed = noiseAnimateSpeed.val;
 
 
     sphereGeo.bind(sphereShader);
@@ -224,21 +210,9 @@ shell.on("gl-render", function (t) {
     };
     mouseLeftDownPrev = pressed;
 
-    gui.begin(io, "Window");
+    gui.begin(io, "Settings");
 
-    gui.textLine("Noise Settings");
-
-    gui.checkbox("Animate", noiseAnimate );
-
-    //gui.sliderFloat("Scale", noiseScale, 0.1, 10.0);
-    gui.sliderFloat("Animation speed", noiseAnimateSpeed, 0.001, 0.1);
-
-    gui.sliderFloat("scale", noiseScale, 0.0, 10.0);
-
-
-    if(gui.button("New Seed")) {
-        newSeed();
-    }
+    gui.textLine("Palette");
 
     gui.radioButton("Earth", paletteType, 0);
     gui.radioButton("Cloud", paletteType, 1);
@@ -246,7 +220,20 @@ shell.on("gl-render", function (t) {
     gui.radioButton("Something", paletteType, 3);
     gui.radioButton("Fireball", paletteType, 4);
     gui.radioButton("Rock", paletteType, 5);
-    
+
+    gui.separator();
+
+
+
+    gui.textLine("Noise Settings");
+
+    gui.checkbox("Animate", noiseAnimate );
+
+    //gui.sliderFloat("Scale", noiseScale, 0.1, 10.0);
+    if(noiseAnimate.val)
+        gui.sliderFloat("Animation Speed", noiseAnimateSpeed, 0.0, 5.0);
+
+    gui.sliderFloat("Noise Scale", noiseScale, 0.0, 10.0);
 
     gui.end(gl, canvas.width, canvas.height);
 });

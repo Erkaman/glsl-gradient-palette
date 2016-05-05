@@ -1,13 +1,12 @@
-/**
- * Created by eric on 04/05/16.
- */
-
-
 var createTexture = require('gl-texture2d');
 var Geometry = require('gl-geometry');
 var glslify = require('glslify');
 var glShader = require('gl-shader');
 var mat4 = require('gl-mat4');
+
+/*
+PRIVATE
+ */
 
 // arguments are top-left and bottom-right corners
 function _createQuad(tl, br) {
@@ -19,10 +18,10 @@ function _createQuad(tl, br) {
     positions.push( [ tl[0] ,  br[1] ] );
     positions.push([ br[0], br[1] ] );
 
-    uvs.push( [0,0 ] );// top-left
-    uvs.push( [1,0 ] );// bottom-left
-    uvs.push( [0,1 ] );// top-right
-    uvs.push( [1,1 ] );// bottom-right
+    uvs.push( [0,0 ] );
+    uvs.push( [1,0 ] );
+    uvs.push( [0,1 ] );
+    uvs.push( [1,1 ] );
 
     var cells = [];
     cells.push( [2,1,0] );
@@ -37,13 +36,18 @@ function _lerpColors(c1, c2, t) {
         c1[0] * (1.0-t) + c2[0] * (t),
         c1[1] * (1.0-t) + c2[1] * (t),
         c1[2] * (1.0-t) + c2[2] * (t)
-
     ];
 }
 
-function createGradientPalette(gl, gradientList) {
+/*
+Gradient Palette.
+ */
 
+function createGradientPalette(gl, gradientList, opts) {
 
+    opts = opts || {};
+    var paletteLength = opts.size || 1024;
+    
     // sanity checking.
     if(gradientList.length < 2)
         throw new Error("gradientList must have at least two elements!");
@@ -58,13 +62,15 @@ function createGradientPalette(gl, gradientList) {
         }
     }
 
-    var paletteLength = 1024;
     var paletteHeight = 1;
 
     var paletteData = [];
 
     var iColor = 0;
 
+    /*
+    Create palette data.
+     */
     for(var i = 0; i < paletteLength; ++i) {
         var t = i / paletteLength;
 
@@ -74,9 +80,7 @@ function createGradientPalette(gl, gradientList) {
 
         var c1 = gradientList[iColor+0];
         var c2 = gradientList[iColor+1];
-
         var l = _lerpColors( c1[1], c2[1] , (t - c1[0])/(c2[0]-c1[0]) );
-
 
         paletteData.push(l[0]);
         paletteData.push(l[1]);
@@ -86,7 +90,9 @@ function createGradientPalette(gl, gradientList) {
     var temp = new Float32Array(paletteLength * paletteHeight * 3)
     temp.set(paletteData)
 
-
+    /*
+    Create palette texture.
+     */
     var paletteTexture = createTexture(gl, [paletteLength, paletteHeight], gl.RGB, gl.FLOAT);
     paletteTexture.bind();
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, paletteLength, paletteHeight, 0, gl.RGB, gl.FLOAT, temp);
@@ -95,9 +101,12 @@ function createGradientPalette(gl, gradientList) {
 
 }
 
+/*
+PaletteDrawer
+ */
 
-function PaletteDrawer(gl) {
-    var quad = _createQuad(  [400, 40], [880, 100] );
+function PaletteDrawer(gl, position, size) {
+    var quad = _createQuad(  position, size);
     this.quadGeo = Geometry(gl).
     attr('aPosition', quad.positions, {size:2} ).
     attr('aUv', quad.uvs, {size:2} ).faces(quad.cells, {size:3});
